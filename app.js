@@ -1,32 +1,38 @@
 /**
  * Genome app
  */
-import schema from './schema.js';
-import express from 'express';
-import mongoose from 'mongoose';
-import config from 'config';
+
 import bodyParser from 'body-parser';
-import { graphqlHTTP } from 'express-graphql';
+import { capitalize } from './functions/capitalize.js';
+import config from 'config';
+import cors from 'cors';
 import Doctor from './models/Doctors.js';
+import express from 'express';
+import { graphqlHTTP } from 'express-graphql';
+import mongoose from 'mongoose';
+import schema from './schema.js';
+import { search } from './functions/search.js';
 
 
-var app = express();
+const app = express();
+app.use(cors());
 app.use(bodyParser.json()); 
-app.use(bodyParser.urlencoded({ extended: false })); 
+app.use(bodyParser.urlencoded({ extended: false})); 
 
 const db = config.get('mongoURI');
 
 mongoose
-    .connect(db, { useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false })
+    .connect(db, { useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false, useUnifiedTopology: true })
     .then(() => console.log('MongoDB Connected...'))
     .catch(err => console.log(err));
 
 // Landing endpoint
 app.get('/', (req, res) => {
-    res.status(200).send("Welcome to Genome's API");
+    res.status(200).send("Welcome to FindDoc's API");
 });
 
-app.use('/graphql', graphqlHTTP({
+// Graphql endpoint
+app.use('/graphql/doctors', graphqlHTTP({
     graphiql: true,
     schema: schema
 }));
@@ -36,15 +42,34 @@ app.get('/doctors', (req, res) => {
     Doctor.find()
         .sort({ date: -1 })
         .then(items => console.log(res.json(items)))
-        .catch(err => res.status(404).json({ status: failed}));
+        .catch(err => res.status(404).json({ status: `failed ${err}`}));
+});
+
+// Get a specific doctor
+app.get('/doctors/:id', (req, res) => {
+    Doctor.findById({_id: req.params.id})
+        .then(item => console.log(res.json(item)))
+        .catch(err => res.status(404).json({ status: `failed ${err}`}));
+});
+
+//Simple search by profesion
+app.get('/search', async (req, res) => {
+    const profesion = await capitalize(req.query.profesion);
+    const data = await Doctor.find();
+    const filteredData = await search(data, profesion);
+    try {
+        res.json(filteredData);
+    } catch (err) {
+        res.status(404).json({ status: `failed ${err}`});
+    }
+
 });
 
 // Add a new doctor profile
-app.post('/doctors', (req, res) => {
-    console.log(req);
+app.post('/doctors', async (req, res) => {
     const newDoctor = new Doctor({
-        name: req.body.name,
-        profesion: req.body.profesion,
+        name: capitalize(req.body.name),
+        profesion: capitalize(req.body.profesion),
         about: req.body.about,
         specialties: req.body.specialties,
         stars: req.body.stars,
@@ -60,17 +85,19 @@ app.post('/doctors', (req, res) => {
 
 // Update a doctor profile
 app.put('/doctors/:id', (req, res) => {
-    findOneAndUpdate({ _id: req.params.id }, req.body)
+    Doctor
+    .findOneAndUpdate({ _id: req.params.id }, req.body)
     .then(() => res.json({ status: "success" }))
-    .catch(err => res.status(404).json({ status: "failed" }));
+    .catch(err => res.status(404).json({ status: `failed ${err}`}));
 });
 
 // Delete a doctor profile
 app.delete('/doctors/:id', (req, res) => {
-    findOneAndDelete({ _id: req.params.id })
+    Doctor
+    .findOneAndDelete({ _id: req.params.id })
     .then(() => res.json({ status: "success" }))
-    .catch(err => res.status(404).json({ status: "failed" }));
+    .catch(err => res.status(404).json({ status: `failed ${err}`}));
 });
 
 const port = 3000;
-app.listen(port, () => console.log(`App started on port: http://localhost:${port}...`));
+app.listen(port, () => console.log(`\n\t ********************\nApp started on port: http://localhost:${port}...\n`));

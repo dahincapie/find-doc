@@ -1,5 +1,5 @@
 /**
- * Doctor Schema 
+ * Doctor model for mongoose
  */
 import mongoose from 'mongoose'
 const { Schema } = mongoose

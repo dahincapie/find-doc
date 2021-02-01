@@ -1,10 +1,15 @@
+/**
+ * Schema for Graphql queries
+ */
+
 import { resolvers } from "./resolvers.js";
 import { makeExecutableSchema } from "graphql-tools";
 
 const typesDefs = `
     type Query {
         doctors: [Doctor],
-        doctor(_id: ID): Doctor
+        doctor(_id: ID): Doctor,
+        search(profesion: String): [Doctor]
     }
 
     type Mutation {

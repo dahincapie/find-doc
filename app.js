@@ -42,14 +42,14 @@ app.get('/doctors', (req, res) => {
     Doctor.find()
         .sort({ date: -1 })
         .then(items => console.log(res.json(items)))
-        .catch(err => res.status(404).json({ status: `failed ${err}`}));
+        .catch(err => res.status(404).json({ status: "failed", error: `${err}`}));
 });
 
 // Get a specific doctor
 app.get('/doctors/:id', (req, res) => {
     Doctor.findById({_id: req.params.id})
-        .then(item => console.log(res.json(item)))
-        .catch(err => res.status(404).json({ status: `failed ${err}`}));
+        .then(item => {console.log(res.json(item))})
+        .catch(err => res.status(404).json({ status: "failed", error: `${err}`}));
 });
 
 //Simple search by profesion
@@ -60,7 +60,7 @@ app.get('/search', async (req, res) => {
     try {
         res.json(filteredData);
     } catch (err) {
-        res.status(404).json({ status: `failed ${err}`});
+        res.status(404).json({ status: "failed", error: `${err}`});
     }
 
 });
@@ -80,7 +80,7 @@ app.post('/doctors', async (req, res) => {
     newDoctor
         .save()
         .then(newItem => res.json(newItem))
-        .catch(err => res.status(404).json({ status: `failed ${err}`}));
+        .catch(err => res.status(404).json({ status: "failed", error: `${err}`}));
 });
 
 // Update a doctor profile
@@ -88,7 +88,7 @@ app.put('/doctors/:id', (req, res) => {
     Doctor
     .findOneAndUpdate({ _id: req.params.id }, req.body)
     .then(() => res.json({ status: "success" }))
-    .catch(err => res.status(404).json({ status: `failed ${err}`}));
+    .catch(err => res.status(404).json({ status: "failed", error: `${err}`}));
 });
 
 // Delete a doctor profile
@@ -96,7 +96,7 @@ app.delete('/doctors/:id', (req, res) => {
     Doctor
     .findOneAndDelete({ _id: req.params.id })
     .then(() => res.json({ status: "success" }))
-    .catch(err => res.status(404).json({ status: `failed ${err}`}));
+    .catch(err => res.status(404).json({ status: "failed", error: `${err}`}));
 });
 
 const port = 3000;
